@@ -1,0 +1,7 @@
+Refmuse Canvas for Unreal Engine 5
+Derived from Refmuse Local Workbench.
+Copyright (c) 2026 Refmuse Local Workbench contributors
+Copyright (c) 2026 Refmuse contributors
+
+This repository contains the RefmuseCanvas editor plugin, its local command
+scripts and tests. The plugin code is licensed under the Apache License 2.0.

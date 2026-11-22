@@ -1,0 +1,14 @@
+{
+  "FileVersion": 3,
+  "Version": 1,
+  "VersionName": "0.1.0-milestone1",
+  "FriendlyName": "Refmuse Canvas",
+  "Description": "Editor-only host for a separately running local Refmuse canvas. Experimental; see the per-version test receipt.",
+  "Category": "Editor",
+  "CreatedBy": "Refmuse",
+  "CanContainContent": false,
+  "IsBetaVersion": true,
+  "Installed": false,
+  "SupportedTargetPlatforms": ["Win64"],
+  "Modules": [{"Name": "RefmuseCanvas", "Type": "Editor", "LoadingPhase": "PostEngineInit", "PlatformAllowList": ["Win64"]}]
+}
