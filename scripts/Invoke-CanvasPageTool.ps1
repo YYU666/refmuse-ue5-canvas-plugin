@@ -4,7 +4,7 @@ param(
     [Parameter(Mandatory)][string]$CanvasOrigin,
     [ValidateSet('Current', 'Call', 'Result')][string]$Mode = 'Call',
     [ValidatePattern('^(launcher|prj_[A-Za-z0-9_-]{1,96})$')][string]$ProjectId,
-    [ValidatePattern('^canvas_[a-z_]+$')][string]$Tool,
+    [ValidatePattern('\Acanvas_[a-z0-9_]+\z', Options = 'None')][string]$Tool,
     [hashtable]$Arguments = @{},
     [ValidatePattern('^[A-Za-z0-9_-]{1,100}$')][string]$OpId,
     [ValidateRange(1, 120)][int]$TimeoutSec = 30,
