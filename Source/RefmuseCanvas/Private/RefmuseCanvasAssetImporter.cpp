@@ -3,6 +3,7 @@
 
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "AssetToolsModule.h"
+#include "RefmuseCanvasGlbImporter.h"
 #include "Audio.h"
 #include "Engine/Texture2D.h"
 #include "HAL/FileManager.h"
@@ -131,7 +132,7 @@ bool IsCanvasAssetSource(const FCanvasAssetSource& Source)
     return IsCanvasProjectId(Source.ProjectId) && IsCanvasNodeId(Source.NodeId) && IsSha256(Source.Digest)
         && (Source.Extension.Equals(TEXT("png"), ESearchCase::CaseSensitive)
             || Source.Extension.Equals(TEXT("jpg"), ESearchCase::CaseSensitive)
-            || Source.Extension.Equals(TEXT("jpeg"), ESearchCase::CaseSensitive) || Source.IsWav());
+            || Source.Extension.Equals(TEXT("jpeg"), ESearchCase::CaseSensitive) || Source.IsWav() || Source.IsGlb());
 }
 
 bool InspectCanvasAsset(FPreparedCanvasAsset& Source)
@@ -141,6 +142,7 @@ bool InspectCanvasAsset(FPreparedCanvasAsset& Source)
     {
         return false;
     }
+    if (Source.IsGlb()) return InspectCanvasGlb(Source);
     if (Source.IsWav())
     {
         return ParsePcmWav(Source.Bytes.GetData(), Source.Bytes.Num(), Source.Wave);
@@ -171,6 +173,7 @@ bool IsProjectAssetFolder(const FString& Destination)
 
 bool ImportCanvasAsset(const FPreparedCanvasAsset& Source, const FString& Destination, FString& Result)
 {
+    if (Source.IsGlb()) return ImportCanvasGlb(Source, Destination, Result);
     const bool bIsWav = Source.IsWav();
     const TCHAR* Prefix = bIsWav ? TEXT("SW_Refmuse_") : TEXT("T_Refmuse_");
     const FString AssetName = Prefix + Source.Digest.Left(16);

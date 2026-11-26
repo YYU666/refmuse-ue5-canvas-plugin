@@ -45,6 +45,7 @@
     const mediaKind = element => {
         if (element.querySelector('.media-image')) return 'image';
         if (element.querySelector('.media-audio')) return 'audio';
+        if (element.querySelector('.media-model, .native3d-node')) return 'model';
         return null;
     };
     const currentProject = () => {
@@ -86,9 +87,11 @@
             if (project.id !== projectId || !Array.isArray(project.canvas?.nodes)) throw new Error('source');
             const nodes = project.canvas.nodes.filter(candidate => candidate?.id === nodeId);
             const node = nodes[0];
-            const asset = /^assets\/([a-f0-9]{64})\.(png|jpe?g|wav)$/.exec(node?.data?.assetPath || '');
-            const kind = asset?.[2] === 'wav' ? 'audio' : 'image';
-            if (nodes.length !== 1 || node?.type !== 'media' || node.data?.kind !== kind || !asset
+            const asset = /^assets\/([a-f0-9]{64})\.(png|jpe?g|wav|glb)$/.exec(node?.data?.assetPath || '');
+            const kind = asset?.[2] === 'wav' ? 'audio' : asset?.[2] === 'glb' ? 'model' : 'image';
+            const nodeMatches = node?.type === 'media' && node.data?.kind === kind
+                || kind === 'model' && node?.type === 'native3d';
+            if (nodes.length !== 1 || !nodeMatches || !asset
                 || (usesSelection && selectedKind !== kind)
                 || (action === 'legacy' && asset[2] !== 'png')) {
                 if (action === 'legacy') throw new Error('saved-png');
@@ -112,9 +115,12 @@
         }
         const types = {
             png: ['image/png'], jpg: ['image/jpeg'], jpeg: ['image/jpeg'], wav: ['audio/x-wav', 'audio/wav'],
+            glb: ['model/gltf-binary', 'application/octet-stream'],
         };
         const bytes = await read(`${prefix}/${assetPath}`, types[extension], expectedSize);
-        if (extension === 'wav') {
+        if (extension === 'glb') {
+            if (bytes.length < 20 || ![103, 108, 84, 70, 2, 0, 0, 0].every((value, index) => bytes[index] === value)) throw new Error('glb');
+        } else if (extension === 'wav') {
             const matches = (offset, text) => text.split('').every((char, index) => bytes[offset + index] === char.charCodeAt(0));
             if (bytes.length < 44 || !matches(0, 'RIFF') || !matches(8, 'WAVE')) throw new Error('wav');
         } else {
@@ -132,7 +138,7 @@
         checkContext();
         await receiver.complete(requestId, nodeId, digest);
     } catch (error) {
-        const known = ['selection', 'saved-png', 'saved-asset', 'project', 'changed', 'size', 'png', 'wav'];
+        const known = ['selection', 'saved-png', 'saved-asset', 'project', 'changed', 'size', 'png', 'wav', 'glb'];
         const code = known.includes(error?.message) ? error.message : 'source';
         await receiver.fail(requestId, code).catch(() => {});
     } finally { clearTimeout(timeout); }

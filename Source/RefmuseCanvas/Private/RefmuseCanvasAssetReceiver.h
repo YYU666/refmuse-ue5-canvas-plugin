@@ -15,11 +15,14 @@ struct FCanvasAssetSource
     FString Digest;
     FString Extension = TEXT("png");
 
+    bool IsGlb() const { return Extension.Equals(TEXT("glb"), ESearchCase::CaseSensitive); }
     bool IsWav() const { return Extension.Equals(TEXT("wav"), ESearchCase::CaseSensitive); }
 };
 
 struct FPreparedCanvasAsset : FCanvasAssetSource
 {
+    int32 GlbImageCount = 0;
+    int32 GlbMaterialCount = 0;
     TArray<uint8> Bytes;
     int32 Width = 0;
     int32 Height = 0;

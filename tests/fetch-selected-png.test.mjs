@@ -323,3 +323,36 @@ test('explicit copy rejects unsaved nodes and caller-supplied paths', async () =
         assert.deepEqual(sent, [['fail', requestId, 'saved-asset']]);
     }
 });
+
+function modelFixture(state) {
+    state.bytes = Buffer.alloc(64);
+    state.bytes.write('glTF');
+    state.bytes.writeUInt32LE(2, 4);
+    state.bytes.writeUInt32LE(state.bytes.length, 8);
+    state.hash = createHash('sha256').update(state.bytes).digest('hex');
+    state.copiedDigest = state.hash;
+    state.copiedExtension = 'glb';
+    state.mime = 'model/gltf-binary';
+    const path = 'assets/' + state.hash + '.glb';
+    state.doc.assets = [{ path, sha256: state.hash, bytes: state.bytes.length }];
+    state.doc.canvas.nodes[0].data = { kind: 'model', assetPath: path };
+    state.element.querySelector = selector => selector.includes('.media-model');
+}
+
+test('copies a selected saved model and transfers GLB through the normal paste route', async () => {
+    const copied = await simulate(modelFixture, 'copy');
+    assert.deepEqual(copied.sent, [['copy', requestId, projectId, nodeId, copied.hash, 'glb']]);
+    const imported = await simulate(modelFixture, 'paste');
+    assert.deepEqual(imported.sent, [
+        ['chunk', requestId, 0, imported.bytes.toString('base64')],
+        ['complete', requestId, nodeId, imported.hash],
+    ]);
+});
+
+test('rejects a non-GLB signature before sending any bytes', async () => {
+    const result = await simulate(state => {
+        modelFixture(state);
+        state.bytes.write('not!');
+    }, 'paste');
+    assert.deepEqual(result.sent, [['fail', requestId, 'glb']]);
+});

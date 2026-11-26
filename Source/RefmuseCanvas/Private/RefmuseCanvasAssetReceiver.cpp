@@ -134,13 +134,18 @@ void URefmuseCanvasAssetReceiver::Complete(const FString& RequestId, const FStri
     {
         Reject(Payload.IsWav()
             ? TEXT("The WAV must be standard 16-bit PCM, mono or stereo, 8-192 kHz, with a matching SHA-256.")
+            : Payload.IsGlb() ? TEXT("The GLB, embedded textures, project identity or SHA-256 could not be verified.")
             : TEXT("Image format, dimensions, project identity or SHA-256 could not be verified."));
         return;
     }
     ActiveRequest.Reset();
     bPrepared = true;
     const FString DigestPrefix = Payload.Digest.Left(16);
-    if (Payload.IsWav())
+    if (Payload.IsGlb())
+    {
+        Status = FString::Printf(TEXT("Ready: verified self-contained GLB | SHA-256 %s"), *DigestPrefix);
+    }
+    else if (Payload.IsWav())
     {
         Status = FString::Printf(TEXT("Ready: %s / %s  |  WAV %u Hz, %u channel(s)  |  SHA-256 %s"),
             *Payload.ProjectId, *Payload.NodeId, Payload.Wave.SampleRate,
@@ -156,13 +161,14 @@ void URefmuseCanvasAssetReceiver::Complete(const FString& RequestId, const FStri
 void URefmuseCanvasAssetReceiver::Fail(const FString& RequestId, const FString& Code)
 {
     if (!Accepts(RequestId)) return;
-    if (Code == TEXT("selection")) Reject(TEXT("Select exactly one image or audio node in the visible canvas."));
+    if (Code == TEXT("selection")) Reject(TEXT("Select exactly one image, audio, or model node in the visible canvas."));
     else if (Code == TEXT("saved-png")) Reject(TEXT("The selected node must refer to a saved PNG in the specified canvas project."));
-    else if (Code == TEXT("saved-asset")) Reject(TEXT("Save one PNG, JPEG, or PCM WAV in the current project before copying it."));
+    else if (Code == TEXT("saved-asset")) Reject(TEXT("Save one PNG, JPEG, PCM WAV, or GLB in the current project before copying it."));
     else if (Code == TEXT("project")) Reject(TEXT("The current canvas project differs from the copied asset. Copy the node again."));
     else if (Code == TEXT("changed")) Reject(TEXT("The saved node or file changed or is no longer available. Copy the node again."));
     else if (Code == TEXT("size")) Reject(TEXT("The canvas project or asset exceeded the 16 MiB read limit."));
     else if (Code == TEXT("png")) Reject(TEXT("The selected file has an invalid image signature."));
+    else if (Code == TEXT("glb")) Reject(TEXT("The selected file is not a GLB 2.0 file."));
     else if (Code == TEXT("wav")) Reject(TEXT("The selected file is not a valid RIFF/WAVE file."));
     else Reject(TEXT("Could not read the local canvas project or asset. Verify the connection and project ID."));
 }
